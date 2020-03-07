@@ -1,0 +1,294 @@
+CREATE SEQUENCE seq_faktura START WITH 1 INCREMENT BY 1 MAXVALUE 9999999999999999 MINVALUE 1 NOCACHE;
+
+CREATE SEQUENCE seq_klient START WITH 1 INCREMENT BY 1 MAXVALUE 99999999999 MINVALUE 1 NOCACHE;
+
+CREATE SEQUENCE seq_poz_faktury START WITH 1 INCREMENT BY 1 MAXVALUE 99999999 MINVALUE 1 NOCACHE;
+
+CREATE SEQUENCE seq_pracownik START WITH 1 INCREMENT BY 1 MAXVALUE 99999999999 MINVALUE 1 NOCACHE;
+
+CREATE SEQUENCE seq_produkt START WITH 1 INCREMENT BY 1 MAXVALUE 9999999999999 MINVALUE 1;
+
+CREATE SEQUENCE seq_usluga START WITH 1 INCREMENT BY 1 MAXVALUE 999999999 MINVALUE 1 NOCACHE;
+
+CREATE TABLE faktura_detale (
+    pozycja_faktury   NUMBER(6) NOT NULL,
+    nr_faktury        NUMBER(6) NOT NULL
+)
+LOGGING;
+
+ALTER TABLE faktura_detale ADD CONSTRAINT faktura_detale_pk PRIMARY KEY ( pozycja_faktury,
+                                                                          nr_faktury );
+
+CREATE TABLE faktura_detale_sprzedaz (
+    ilosc_produktow   NUMBER(6) NOT NULL,
+    kod_produktu      NUMBER(6) NOT NULL,
+    nr_pracownika     NUMBER(6) NOT NULL,
+    cena_katalogowa   NUMBER(8, 2) NOT NULL,
+    pozycja_faktury   NUMBER(6) NOT NULL,
+    nr_faktury        NUMBER(6) NOT NULL
+)
+LOGGING;
+
+CREATE UNIQUE INDEX faktura_detale_sprzedaz__idx ON
+    faktura_detale_sprzedaz (
+        pozycja_faktury
+    ASC,
+        nr_faktury
+    ASC )
+        LOGGING;
+
+CREATE TABLE faktura_detale_usluga (
+    nr_uslugi         NUMBER(6) NOT NULL,
+    cena_uslugi       NUMBER(8, 2) NOT NULL,
+    pozycja_faktury   NUMBER(6) NOT NULL,
+    nr_faktury        NUMBER(6) NOT NULL
+)
+LOGGING;
+
+CREATE UNIQUE INDEX faktura_detale_usluga__idx ON
+    faktura_detale_usluga (
+        pozycja_faktury
+    ASC,
+        nr_faktury
+    ASC )
+        LOGGING;
+
+CREATE TABLE faktura_naglowek (
+    nr_faktury        NUMBER(6) NOT NULL,
+    data_faktury      DATE NOT NULL,
+    wartosc_faktury   NUMBER(10, 2) NOT NULL,
+    nr_klienta        NUMBER(5) NOT NULL
+)
+LOGGING;
+
+ALTER TABLE faktura_naglowek ADD CONSTRAINT faktura_naglowek_pk PRIMARY KEY ( nr_faktury );
+
+CREATE TABLE klient (
+    nr_klienta   NUMBER(5) NOT NULL,
+    imie         VARCHAR2(20) NOT NULL,
+    nazwisko     VARCHAR2(40) NOT NULL,
+    "e-mail"     VARCHAR2(30)
+)
+LOGGING;
+
+ALTER TABLE klient ADD CONSTRAINT klient_pk PRIMARY KEY ( nr_klienta );
+
+CREATE TABLE pracownik (
+    nr_pracownika   NUMBER(6) NOT NULL,
+    imie            VARCHAR2(20) NOT NULL,
+    nazwisko        VARCHAR2(30) NOT NULL
+)
+LOGGING;
+
+ALTER TABLE pracownik ADD CONSTRAINT pracownik_pk PRIMARY KEY ( nr_pracownika );
+
+CREATE TABLE pracownik_biura (
+    nr_stanowiska   NUMBER(2) NOT NULL,
+    nr_pracownika   NUMBER(6) NOT NULL
+)
+LOGGING;
+
+ALTER TABLE pracownik_biura ADD CONSTRAINT pracownik_biura_pk PRIMARY KEY ( nr_pracownika );
+
+CREATE TABLE produkt (
+    kod_produktu      NUMBER(6) NOT NULL,
+    nazwa_produktu    VARCHAR2(30) NOT NULL,
+    cena_katalogowa   NUMBER(8, 2) NOT NULL
+)
+LOGGING;
+
+ALTER TABLE produkt ADD CONSTRAINT produkt_pk PRIMARY KEY ( kod_produktu );
+
+CREATE TABLE produkt_detale (
+    cena_zakupu      NUMBER(8, 2) NOT NULL,
+    cena_sprzedazy   NUMBER(8, 2) NOT NULL,
+    rok_produkcji    NUMBER(4),
+    kod_produktu     NUMBER(6) NOT NULL
+)
+LOGGING;
+
+CREATE UNIQUE INDEX produkt_detale__idx ON
+    produkt_detale (
+        kod_produktu
+    ASC )
+        LOGGING;
+
+CREATE TABLE serwisant (
+    specjalizacja   VARCHAR2(30) NOT NULL,
+    nr_pracownika   NUMBER(6) NOT NULL
+)
+LOGGING;
+
+ALTER TABLE serwisant ADD CONSTRAINT serwisant_pk PRIMARY KEY ( nr_pracownika );
+
+CREATE TABLE serwisant_usluga (
+    serwisant_pracownik_nr_pracownika   NUMBER(6) NOT NULL,
+    usluga_nr_uslugi                    NUMBER(6) NOT NULL
+)
+LOGGING;
+
+ALTER TABLE serwisant_usluga ADD CONSTRAINT serwisant_usluga_pk PRIMARY KEY ( serwisant_pracownik_nr_pracownika,
+                                                                              usluga_nr_uslugi );
+
+CREATE TABLE usluga (
+    nr_uslugi      NUMBER(6) NOT NULL,
+    cena_uslugi    NUMBER(8, 2) NOT NULL,
+    nazwa_uslugi   VARCHAR2(30) NOT NULL
+)
+LOGGING;
+
+ALTER TABLE usluga ADD CONSTRAINT usluga_pk PRIMARY KEY ( nr_uslugi );
+
+ALTER TABLE faktura_detale_sprzedaz
+    ADD CONSTRAINT faktura_detale_fk FOREIGN KEY ( pozycja_faktury,
+                                                   nr_faktury )
+        REFERENCES faktura_detale ( pozycja_faktury,
+                                    nr_faktury )
+    NOT DEFERRABLE;
+
+ALTER TABLE faktura_detale_usluga
+    ADD CONSTRAINT faktura_detale_fkv1 FOREIGN KEY ( pozycja_faktury,
+                                                     nr_faktury )
+        REFERENCES faktura_detale ( pozycja_faktury,
+                                    nr_faktury )
+    NOT DEFERRABLE;
+
+ALTER TABLE faktura_detale
+    ADD CONSTRAINT faktura_naglowek_fk FOREIGN KEY ( nr_faktury )
+        REFERENCES faktura_naglowek ( nr_faktury )
+    NOT DEFERRABLE;
+
+ALTER TABLE faktura_naglowek
+    ADD CONSTRAINT klient_fk FOREIGN KEY ( nr_klienta )
+        REFERENCES klient ( nr_klienta )
+    NOT DEFERRABLE;
+
+ALTER TABLE faktura_detale_sprzedaz
+    ADD CONSTRAINT pracownik_biura_fk FOREIGN KEY ( nr_pracownika )
+        REFERENCES pracownik_biura ( nr_pracownika )
+    NOT DEFERRABLE;
+
+ALTER TABLE pracownik_biura
+    ADD CONSTRAINT pracownik_fk FOREIGN KEY ( nr_pracownika )
+        REFERENCES pracownik ( nr_pracownika )
+    NOT DEFERRABLE;
+
+ALTER TABLE serwisant
+    ADD CONSTRAINT pracownik_fkv1 FOREIGN KEY ( nr_pracownika )
+        REFERENCES pracownik ( nr_pracownika )
+    NOT DEFERRABLE;
+
+ALTER TABLE faktura_detale_sprzedaz
+    ADD CONSTRAINT produkt_fk FOREIGN KEY ( kod_produktu )
+        REFERENCES produkt ( kod_produktu )
+    NOT DEFERRABLE;
+
+ALTER TABLE produkt_detale
+    ADD CONSTRAINT produkt_fkv1 FOREIGN KEY ( kod_produktu )
+        REFERENCES produkt ( kod_produktu )
+    NOT DEFERRABLE;
+
+ALTER TABLE serwisant_usluga
+    ADD CONSTRAINT serwisant_usluga_serwisant_fk FOREIGN KEY ( serwisant_pracownik_nr_pracownika )
+        REFERENCES serwisant ( nr_pracownika )
+    NOT DEFERRABLE;
+
+ALTER TABLE serwisant_usluga
+    ADD CONSTRAINT serwisant_usluga_usluga_fk FOREIGN KEY ( usluga_nr_uslugi )
+        REFERENCES usluga ( nr_uslugi )
+    NOT DEFERRABLE;
+
+ALTER TABLE faktura_detale_usluga
+    ADD CONSTRAINT usluga_fk FOREIGN KEY ( nr_uslugi )
+        REFERENCES usluga ( nr_uslugi )
+    NOT DEFERRABLE;
+
+CREATE OR REPLACE TRIGGER tr_ins_faktura_detale 
+    BEFORE INSERT ON Faktura_detale 
+    FOR EACH ROW 
+begin
+:new.pozycja_faktury := seq_poz_faktury.nextval;
+end; 
+/
+
+CREATE OR REPLACE TRIGGER tr_ins_faktura_detale_sprzedaz 
+    BEFORE INSERT ON Faktura_detale_sprzedaz 
+    FOR EACH ROW 
+declare
+v_cena_katalogowa faktura_detale_sprzedaz.cena_katalogowa%type;
+v_pozycja_faktury faktura_detale_sprzedaz.pozycja_faktury%type;
+begin
+insert into faktura_detale(nr_faktury) values (:new.nr_faktury);
+select cena_katalogowa into v_cena_katalogowa from produkt where kod_produktu = :new.kod_produktu;
+select Max( pozycja_faktury) into v_pozycja_faktury from faktura_detale where nr_faktury =:new.nr_faktury;
+:new.cena_katalogowa := v_cena_katalogowa;
+:new.pozycja_faktury := v_pozycja_faktury ;
+
+update faktura_naglowek
+set wartosc_faktury = wartosc_faktury + (v_cena_katalogowa*:new.ilosc_produktow)
+where nr_faktury =:new.nr_faktury;
+
+end; 
+/
+
+CREATE OR REPLACE TRIGGER tr_ins_faktura_detale_usluga 
+    BEFORE INSERT ON Faktura_detale_usluga 
+    FOR EACH ROW 
+declare
+v_cena_uslugi faktura_detale_usluga.cena_uslugi%type;
+v_pozycja_faktury faktura_detale_usluga.pozycja_faktury%type;
+begin
+insert into faktura_detale(nr_faktury) values (:new.nr_faktury);
+select cena_uslugi into v_cena_uslugi from usluga where nr_uslugi = :new.nr_uslugi;
+select Max( pozycja_faktury) into v_pozycja_faktury from faktura_detale where nr_faktury =:new.nr_faktury;
+:new.cena_uslugi := v_cena_uslugi;
+:new.pozycja_faktury := v_pozycja_faktury ;
+
+update faktura_naglowek
+set wartosc_faktury = wartosc_faktury + v_cena_uslugi
+where nr_faktury =:new.nr_faktury;
+
+end; 
+/
+
+CREATE OR REPLACE TRIGGER tr_ins_klient 
+    BEFORE INSERT ON Klient 
+    FOR EACH ROW 
+begin
+:new.nr_klienta := seq_klient.nextval;
+end; 
+/
+
+CREATE OR REPLACE TRIGGER tr_ins_pracownik 
+    BEFORE INSERT ON Pracownik 
+    FOR EACH ROW 
+begin
+:new.nr_pracownika := seq_pracownik.nextval;
+end; 
+/
+
+CREATE OR REPLACE TRIGGER tr_ins_produkt 
+    BEFORE INSERT ON Produkt 
+    FOR EACH ROW 
+begin
+:new.kod_produktu := seq_produkt.nextval;
+end; 
+/
+
+CREATE OR REPLACE TRIGGER tr_ins_usluga 
+    BEFORE INSERT ON Usluga 
+    FOR EACH ROW 
+begin
+:new.nr_uslugi := seq_usluga.nextval;
+end; 
+/
+
+CREATE OR REPLACE TRIGGER "trigger tr_ins_faktura_naglowek " 
+    BEFORE INSERT ON Faktura_naglowek 
+    FOR EACH ROW 
+begin
+:new.nr_faktury :=seq_faktura.nextval ;
+:new.wartosc_faktury := 0 ;
+:new.data_faktury :=sysdate;
+end; 
+/
